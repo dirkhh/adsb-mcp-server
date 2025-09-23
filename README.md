@@ -13,6 +13,29 @@ This MCP server so far provides access to:
 - **Search Functionality**: Find specific aircraft by callsign, hex code, or flight number
 - **Range Statistics**: Coverage area and signal range information
 
+## Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- Access to an ADS-B feeder
+
+### Install Dependencies
+```bash
+# Clone the repository
+git clone <repository-url>
+cd adsb-mcp-server
+
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Either install production dependencies
+pip install -r requirements.txt
+
+# or the development dependencies (which include production dependencies)
+pip install -r requirements-dev.txt
+```
+
 # MCP Client Setup Guide
 
 This guide will help you connect various MCP clients to your ADS-B MCP server.

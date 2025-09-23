@@ -3,17 +3,14 @@
 Debugging tool for MCP server connection issues
 """
 
-import asyncio
 import json
 import subprocess
 import sys
-import os
 from pathlib import Path
-from typing import Any, Dict
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from shared_utils import get_remote_host_and_port
+from shared_utils import get_remote_host_and_port  # noqa: E402
 
 
 def debug_connection(remote_host: str, remote_port: int = 8080):
@@ -133,20 +130,6 @@ def debug_connection(remote_host: str, remote_port: int = 8080):
         print(f"❌ MCP server startup: ERROR - {e}")
 
     print("\nDebug completed. Check the results above for any issues.")
-
-
-def get_remote_host_and_port():
-    """Get the remote host and port from the user"""
-    remote_host = (
-        input("Enter the IP address or hostname of your ADS-B feeder (default is adsb-feeder.local): ").strip()
-        or "adsb-feeder.local"
-    )
-    remote_port = (
-        int(input("Enter the port (default 8080): ").strip())
-        if input("Enter the port (default 8080): ").strip()
-        else 8080
-    )
-    return remote_host, remote_port
 
 
 def main():

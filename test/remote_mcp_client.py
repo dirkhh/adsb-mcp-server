@@ -3,17 +3,15 @@
 Interactive command-line client for testing the MCP server
 """
 
-import asyncio
 import json
 import subprocess
 import sys
-import os
 from pathlib import Path
 from typing import Any, Dict
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from shared_utils import get_remote_host_and_port
+from shared_utils import get_remote_host_and_port  # noqa: E402
 
 
 class RemoteMCPClient:
@@ -57,9 +55,7 @@ class RemoteMCPClient:
         response_line = self.server_process.stdout.readline()
         if response_line:
             response = json.loads(response_line)
-            print(
-                f"✅ Connected to MCP server: {response.get('result', {}).get('serverInfo', {}).get('name', 'Unknown')}"
-            )
+            print(f"✅ Connected to MCP server: {response.get('result', {}).get('serverInfo', {}).get('name', 'Unknown')}")
 
         # Send initialized notification
         initialized_notification = {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
@@ -105,7 +101,7 @@ class RemoteMCPClient:
             self.server_process.wait()
             self.server_process = None
 
-    def interactive_mode(self):
+    def interactive_mode(self) -> None:
         """Run interactive command loop"""
         print("\nRemote readsb MCP Client")
         print("=" * 30)
@@ -194,7 +190,7 @@ class RemoteMCPClient:
             except Exception as e:
                 print(f"Error: {e}")
 
-    def _print_response(self, response: Dict[str, Any]):
+    def _print_response(self, response: Dict[str, Any]) -> None:
         """Print formatted response"""
         if "result" in response:
             content = response["result"].get("content", [])
@@ -210,7 +206,7 @@ class RemoteMCPClient:
             print("Unexpected response format")
 
 
-def main():
+def main() -> None:
     """Main entry point"""
     print("Remote readsb MCP Client")
     print("=" * 30)

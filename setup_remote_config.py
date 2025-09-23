@@ -130,8 +130,8 @@ def test_connection():
 
     # Import and run the test
     try:
-        import test.test_remote_connection as test_remote_connection
         import asyncio
+        from test import test_remote_connection
 
         asyncio.run(test_remote_connection.test_remote_mcp_server(remote_host, remote_port))
     except ImportError:

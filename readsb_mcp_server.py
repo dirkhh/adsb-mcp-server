@@ -8,22 +8,13 @@ import asyncio
 import json
 import logging
 import sys
-from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin
+from typing import Any, Dict, List
 
 import httpx
 from mcp.server import Server
-from mcp.server.models import InitializationOptions
 from mcp.server.lowlevel import NotificationOptions
-from mcp.types import (
-    Resource,
-    Tool,
-    TextContent,
-    ImageContent,
-    EmbeddedResource,
-    LoggingLevel,
-)
-
+from mcp.server.models import InitializationOptions
+from mcp.types import Resource, TextContent, Tool
 from pydantic import AnyUrl
 
 # Configure logging to stderr to avoid interfering with stdio protocol
@@ -261,7 +252,7 @@ class ReadsbMCPServer:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(url)
             response.raise_for_status()
-            return response.json()
+            return response.json()  # type: ignore[return-value,no-any-return]
 
     async def _get_aircraft_data(self, args: Dict[str, Any]) -> List[TextContent]:
         """Get aircraft data with optional filtering"""
@@ -309,7 +300,7 @@ class ReadsbMCPServer:
                 altitude = aircraft.get("alt_baro", "Unknown")
                 distance = aircraft.get("r_dst", "Unknown")
 
-                summary += f"{i+1:2d}. {callsign:<8} ({hex_code}) Alt: {altitude} ft, Dist: {distance} nm\n"
+                summary += f"{i + 1:2d}. {callsign:<8} ({hex_code}) Alt: {altitude} ft, Dist: {distance} nm\n"
 
             if total_aircraft > 10:
                 summary += f"... and {total_aircraft - 10} more aircraft\n"
@@ -344,7 +335,7 @@ class ReadsbMCPServer:
             summary += f"Total Aircraft: {total.get('aircraft_with_pos', 0):,}\n"
 
         if last1min:
-            summary += f"\nLast Minute:\n"
+            summary += "\nLast Minute:\n"
             summary += f"  Messages: {last1min.get('messages', 0):,}\n"
             summary += f"  Aircraft: {last1min.get('aircraft_with_pos', 0):,}\n"
 
@@ -395,11 +386,7 @@ class ReadsbMCPServer:
                         matches.append(aircraft)
 
             if not matches:
-                return [
-                    TextContent(
-                        type="text", text=f"No aircraft found matching '{query}' with search type '{search_type}'"
-                    )
-                ]
+                return [TextContent(type="text", text=f"No aircraft found matching '{query}' with search type '{search_type}'")]
 
             result = f"Found {len(matches)} aircraft matching '{query}':\n\n"
             for aircraft in matches:
@@ -439,12 +426,14 @@ class ReadsbMCPServer:
             if "total" in stats_data:
                 total_stats = stats_data["total"]
                 if "max_distance" in total_stats:
-                    summary += f"Max Range: {total_stats['max_distance']} meters or {total_stats['max_distance'] * 0.000539957} nautical miles\n"
+                    max_dist = total_stats["max_distance"]
+                    summary += f"Max Range: {max_dist} meters or {max_dist * 0.000539957} nautical miles\n"
             # then the last15min range
             if "last15min" in stats_data:
                 last15min_stats = stats_data["last15min"]
                 if "max_distance" in last15min_stats:
-                    summary += f"Last 15 Minutes Max Range: {last15min_stats['max_distance']} meters or {last15min_stats['max_distance'] * 0.000539957} nautical miles\n"
+                    last15max_dist = last15min_stats["max_distance"]
+                    summary += f"Last 15 Minutes Max Range: {last15max_dist} meters or " f"{last15max_dist * 0.000539957} nautical miles\n"
 
             return [TextContent(type="text", text=summary)]
 
@@ -525,9 +514,7 @@ class ReadsbMCPServer:
             feeder_lon = receiver_data.get("lon")
 
             if not feeder_lat or not feeder_lon:
-                return [
-                    TextContent(type="text", text="Error: Receiver location cannot be determined from feeder data")
-                ]
+                return [TextContent(type="text", text="Error: Receiver location cannot be determined from feeder data")]
 
             # Get aircraft data
             aircraft_data = await self._fetch_json("aircraft.json")
@@ -549,11 +536,7 @@ class ReadsbMCPServer:
 
             if not closest_aircraft:
                 if max_distance:
-                    return [
-                        TextContent(
-                            type="text", text=f"No aircraft found within {max_distance} nautical miles of the feeder"
-                        )
-                    ]
+                    return [TextContent(type="text", text=f"No aircraft found within {max_distance} nautical miles of the feeder")]
                 else:
                     return [TextContent(type="text", text="No aircraft found near the feeder at this time")]
 
@@ -610,9 +593,7 @@ class ReadsbMCPServer:
             feeder_lon = receiver_data.get("lon")
 
             if not feeder_lat or not feeder_lon:
-                return [
-                    TextContent(type="text", text="Error: Receiver location cannot be determined from feeder data")
-                ]
+                return [TextContent(type="text", text="Error: Receiver location cannot be determined from feeder data")]
 
             # Get direction bearing range
             min_bearing, max_bearing = self._get_direction_range(direction)
@@ -650,15 +631,11 @@ class ReadsbMCPServer:
                     return [
                         TextContent(
                             type="text",
-                            text=f"No aircraft found to the {direction} within {max_distance} nautical miles of the feeder",
+                            text=(f"No aircraft found to the {direction} within " f"{max_distance} nautical miles of the feeder"),
                         )
                     ]
                 else:
-                    return [
-                        TextContent(
-                            type="text", text=f"No aircraft found to the {direction} of the feeder at this time"
-                        )
-                    ]
+                    return [TextContent(type="text", text=f"No aircraft found to the {direction} of the feeder at this time")]
 
             # Format results
             result = f"Aircraft to the {direction} of feeder ({feeder_lat:.4f}, {feeder_lon:.4f}):\n\n"
@@ -742,7 +719,7 @@ class ReadsbMCPServer:
                         server_version="1.0.0",
                         capabilities=self.server.get_capabilities(
                             notification_options=NotificationOptions(),
-                            experimental_capabilities=None,
+                            experimental_capabilities={},
                         ),
                     ),
                 )
@@ -771,13 +748,13 @@ def main():
     logger.info(f"parsed args {args}")
 
     server = ReadsbMCPServer(base_url=args.base_url)
-    logger.info(f"created server")
+    logger.info("created server")
 
     if args.test:
         asyncio.run(server.test_mode())
     else:
         asyncio.run(server.run())
-    logger.info(f"server finished")
+    logger.info("server finished")
 
 
 if __name__ == "__main__":

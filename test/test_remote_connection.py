@@ -5,15 +5,13 @@ Test script for connecting to remote readsb/Ultrafeeder MCP server
 
 import asyncio
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from shared_utils import get_remote_host_and_port
+from shared_utils import get_remote_host_and_port  # noqa: E402
 
 
 async def test_remote_mcp_server(remote_host: str, remote_port: int = 8080):
@@ -64,9 +62,7 @@ async def test_remote_mcp_server(remote_host: str, remote_port: int = 8080):
         response_line = server_process.stdout.readline()
         if response_line:
             response = json.loads(response_line)
-            print(
-                f"Initialization response: {response.get('result', {}).get('serverInfo', {}).get('name', 'Unknown')}"
-            )
+            print(f"Initialization response: {response.get('result', {}).get('serverInfo', {}).get('name', 'Unknown')}")
 
         # Send initialized notification
         initialized_notification = {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
