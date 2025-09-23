@@ -1,0 +1,4 @@
+# MCP package - install with: pip install mcp
+# If that fails, try: pip install git+https://github.com/modelcontextprotocol/python-sdk.git
+httpx>=0.25.0
+pydantic>=2.0.0
