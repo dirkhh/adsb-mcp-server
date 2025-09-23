@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort mypy
+        pip install -r requirements.txt
+
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings. Line length set to 120
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+
+    - name: Check code formatting with black
+      run: |
+        black --check --diff .
+
+    - name: Check import sorting with isort
+      run: |
+        isort --check-only --diff .
+
+    - name: Type checking with mypy
+      run: |
+        mypy . --ignore-missing-imports || true
+
+    - name: Test imports and basic functionality
+      run: |
+        python -c "
+        # Test main server import
+        from readsb_mcp_server import ReadsbMCPServer
+        print('✅ Main server imports successfully')
+
+        # Test shared utilities import
+        from shared_utils import get_remote_host_and_port
+        print('✅ Shared utilities import successfully')
+
+        # Test server initialization
+        server = ReadsbMCPServer('http://localhost:8080')
+        print('✅ Server initializes successfully')
+
+        # Test that tools are defined
+        assert len(server.server._tools) > 0, 'No tools defined'
+        print('✅ Server has tools defined')
+
+        print('✅ All basic tests passed')
+        "
+
+    - name: Test script imports
+      run: |
+        # Test that test scripts can import their dependencies
+        python -c "
+        import sys
+        import os
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'test'))
+
+        # Test test script imports
+        from test_remote_connection import test_remote_mcp_server
+        from remote_mcp_client import RemoteMCPClient
+        from debug_mcp_server import debug_connection
+
+        print('✅ All test scripts import successfully')
+        "
+
+    - name: Check for common issues
+      run: |
+        # Check for TODO/FIXME comments
+        if grep -r "TODO\|FIXME" . --include="*.py" --exclude-dir=.git; then
+          echo "⚠️  Found TODO/FIXME comments - consider addressing them"
+        fi
+
+        # Check for print statements (should use logging instead)
+        if grep -r "print(" . --include="*.py" --exclude-dir=.git --exclude-dir=test; then
+          echo "⚠️  Found print statements in non-test files - consider using logging"
+        fi
+
+        # Check for hardcoded paths
+        if grep -r "/Users/\|/home/\|C:\\" . --include="*.py" --exclude-dir=.git; then
+          echo "❌ Found hardcoded paths - these should be relative or configurable"
+          exit 1
+        fi
+
+        echo "✅ No major issues found"
