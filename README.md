@@ -48,57 +48,27 @@ This guide will help you connect various MCP clients to your ADS-B MCP server.
 
 ## Option 1: Claude Desktop (Recommended)
 
-### Step 1: Find Claude Desktop Config File
+### Step 1: Configure Claude Desktop
 
-**macOS:**
+**Recommended: Use the automatic setup script:**
+
 ```bash
-~/Library/Application Support/Claude/claude_desktop_config.json
+python setup_remote_config.py
 ```
 
-**Windows:**
-```bash
-%APPDATA%\Claude\claude_desktop_config.json
-```
+This script will:
+- Prompt you for your ADS-B feeder host and port
+- Automatically create the correct configuration
+- Merge with existing Claude Desktop configuration if present
+- Provide clear instructions for next steps
 
-**Linux:**
-```bash
-~/.config/claude/claude_desktop_config.json
-```
 
-### Step 2: Add ADS-B MCP Server
+### Step 2: Restart Claude Desktop (or Reload MCP Configuration if your version of Claude Desktop supports that)
 
-Add this configuration to your `claude_desktop_config.json`:
+Close and reopen Claude Desktop to load the new configuration. As of this writing, not all versions of Claude
+have an option to reload its configuration.
 
-```json
-{
-  "mcpServers": {
-    "readsb": {
-      "command": "python",
-      "args": [
-        "/PATH/TO/adsb-mcp-server/readsb_mcp_server.py",
-        "--base-url",
-        "http://adsb-feeder.local"
-      ],
-      "env": {},
-      "disabled": false,
-      "autoApprove": [
-        "get_aircraft_data",
-        "get_receiver_stats",
-        "search_aircraft",
-        "get_range_statistics",
-        "get_closest_aircraft",
-        "get_aircraft_by_direction"
-      ]
-    }
-  }
-}
-```
-
-### Step 3: Restart Claude Desktop
-
-Close and reopen Claude Desktop to load the new configuration. Unfortunately at this point Claude doesn't have an option to reload its configuration.
-
-### Step 4: Test the Connection
+### Step 3: Test the Connection
 
 In Claude Desktop, try asking:
 - "What are the 5 closest planes to my feeder?"
