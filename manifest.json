@@ -12,11 +12,21 @@
     "mcp_config": {
       "command": "${__dirname}/venv/bin/python",
       "args": [
-        "readsb_mcp_server.py"
+        "${__dirname}/readsb_mcp_server.py",
+        "--base-url",
+        "${user_config.adsb_feeder_url}"
       ],
       "env": {
         "PYTHONPATH": "${__dirname}"
       }
+    }
+  },
+  "user_config": {
+    "adsb_feeder_url": {
+      "type": "string",
+      "title": "ADS-B Feeder URL",
+      "description": "The URL of the ADS-B feeder, including the port, e.g. http://adsb-feeder.local:8080",
+      "required": true
     }
   },
   "license": "GPLv3",
