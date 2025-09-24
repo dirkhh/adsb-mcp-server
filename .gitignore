@@ -54,3 +54,6 @@ dmypy.json
 
 # Bundle files
 *.mcpb
+
+# Build artifacts
+*.egg-info/
