@@ -124,6 +124,11 @@ class ReadsbMCPServer:
                                 },
                                 "description": "Filter aircraft by altitude range (feet)",
                             },
+                            "include_routes": {
+                                "type": "boolean",
+                                "default": True,
+                                "description": "Include flight route information (requires internet connection)",
+                            },
                         },
                     },
                 ),
@@ -184,6 +189,11 @@ class ReadsbMCPServer:
                                 "type": "number",
                                 "description": "Maximum distance to consider (nautical miles)",
                             },
+                            "include_routes": {
+                                "type": "boolean",
+                                "default": True,
+                                "description": "Include flight route information (requires internet connection)",
+                            },
                         },
                     },
                 ),
@@ -217,6 +227,11 @@ class ReadsbMCPServer:
                                 "minimum": 1,
                                 "maximum": 50,
                                 "description": "Maximum number of aircraft to return",
+                            },
+                            "include_routes": {
+                                "type": "boolean",
+                                "default": True,
+                                "description": "Include flight route information (requires internet connection)",
                             },
                         },
                         "required": ["direction"],
@@ -254,6 +269,46 @@ class ReadsbMCPServer:
             response.raise_for_status()
             return response.json()  # type: ignore[return-value,no-any-return]
 
+    async def _get_route_info(self, aircraft_list: List[Dict]) -> Dict[str, str]:
+        """Fetch route information for aircraft from adsb.im API"""
+        # Filter aircraft with valid callsigns and positions
+        planes_data = []
+        for aircraft in aircraft_list:
+            callsign = aircraft.get("flight", "").strip()
+            lat = aircraft.get("lat")
+            lng = aircraft.get("lon")
+
+            if callsign and lat and lng and callsign != "Unknown":
+                planes_data.append({"callsign": callsign, "lat": lat, "lng": lng})
+
+        if not planes_data:
+            return {}
+
+        # Call adsb.im API
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    "https://adsb.im/api/0/routeset",
+                    headers={
+                        "User-Agent": "adsb-mcp-server",
+                        "Content-Type": "application/json; charset=utf-8",
+                    },
+                    json={"planes": planes_data},
+                )
+                response.raise_for_status()
+                routes = response.json()
+
+                # Extract plausible routes
+                route_info = {}
+                for route in routes:
+                    if route.get("plausible") and route.get("_airport_codes_iata"):
+                        route_info[route["callsign"]] = route["_airport_codes_iata"]
+
+                return route_info
+        except Exception as e:
+            logger.warning(f"Failed to fetch route info: {e}")
+            return {}
+
     async def _get_aircraft_data(self, args: Dict[str, Any]) -> List[TextContent]:
         """Get aircraft data with optional filtering"""
         try:
@@ -272,9 +327,13 @@ class ReadsbMCPServer:
                 aircraft_list = [a for a in aircraft_list if min_alt <= a.get("alt_baro", 0) <= max_alt]
 
             format_type = args.get("format", "json")
+            include_routes = args.get("include_routes", True)
 
             if format_type == "summary":
-                summary = self._format_aircraft_summary(aircraft_list, data)
+                route_info = {}
+                if include_routes:
+                    route_info = await self._get_route_info(aircraft_list)
+                summary = self._format_aircraft_summary(aircraft_list, data, route_info)
                 return [TextContent(type="text", text=summary)]
             else:
                 filtered_data = {**data, "aircraft": aircraft_list}
@@ -283,7 +342,7 @@ class ReadsbMCPServer:
         except Exception as e:
             return [TextContent(type="text", text=f"Error fetching aircraft data: {e}")]
 
-    def _format_aircraft_summary(self, aircraft_list: List[Dict], full_data: Dict) -> str:
+    def _format_aircraft_summary(self, aircraft_list: List[Dict], full_data: Dict, route_info: Dict[str, str] = {}) -> str:
         """Format aircraft data as human-readable summary"""
         total_aircraft = len(aircraft_list)
         with_pos = len([a for a in aircraft_list if "lat" in a and "lon" in a])
@@ -306,6 +365,10 @@ class ReadsbMCPServer:
                 if hex_code != "Unknown":
                     map_link = f"{self.web_base}/?icao={hex_code}"
                     summary += f"     Map Link: {map_link}\n"
+
+                # Add route information if available
+                if callsign in route_info:
+                    summary += f"     Route: {route_info[callsign]}\n"
 
                 summary += f"     Alt: {altitude} ft, Dist: {distance} nm\n"
 
@@ -395,6 +458,12 @@ class ReadsbMCPServer:
             if not matches:
                 return [TextContent(type="text", text=f"No aircraft found matching '{query}' with search type '{search_type}'")]
 
+            # Get route information for matches
+            include_routes = args.get("include_routes", True)
+            route_info = {}
+            if include_routes:
+                route_info = await self._get_route_info(matches)
+
             result = f"Found {len(matches)} aircraft matching '{query}':\n\n"
             for aircraft in matches:
                 callsign = aircraft.get("flight", "").strip() or "Unknown"
@@ -410,6 +479,10 @@ class ReadsbMCPServer:
                 if hex_code != "Unknown":
                     map_link = f"{self.web_base}/?icao={hex_code}"
                     result += f"Map Link: {map_link}\n"
+
+                # Add route information if available
+                if callsign in route_info:
+                    result += f"Route: {route_info[callsign]}\n"
 
                 result += f"Altitude: {altitude} ft\n"
                 result += f"Position: {lat}, {lon}\n"
@@ -521,6 +594,7 @@ class ReadsbMCPServer:
                 return [TextContent(type="text", text="Invalid count parameter. Must be an integer between 1 and 50")]
 
             max_distance = args.get("max_distance")
+            include_routes = args.get("include_routes", True)
 
             # Get receiver location
             receiver_data = await self._fetch_json("receiver.json")
@@ -554,6 +628,12 @@ class ReadsbMCPServer:
                 else:
                     return [TextContent(type="text", text="No aircraft found near the feeder at this time")]
 
+            # Get route information for closest aircraft
+            route_info = {}
+            if include_routes:
+                closest_aircraft_list = [aircraft for _, aircraft in closest_aircraft]
+                route_info = await self._get_route_info(closest_aircraft_list)
+
             # Format results
             result = f"Closest {len(closest_aircraft)} aircraft to feeder ({feeder_lat:.4f}, {feeder_lon:.4f}):\n\n"
 
@@ -572,6 +652,10 @@ class ReadsbMCPServer:
                 if hex_code != "Unknown":
                     map_link = f"{self.web_base}/?icao={hex_code}"
                     result += f"   Map Link: {map_link}\n"
+
+                # Add route information if available
+                if callsign in route_info:
+                    result += f"   Route: {route_info[callsign]}\n"
 
                 result += f"   Distance: {distance:.1f} nm\n"
                 result += f"   Altitude: {altitude} ft\n"
@@ -603,6 +687,7 @@ class ReadsbMCPServer:
 
             max_distance = args.get("max_distance")
             count = args.get("count", 10)
+            include_routes = args.get("include_routes", True)
 
             # Validate count parameter
             if not isinstance(count, int) or count < 1 or count > 50:
@@ -658,6 +743,12 @@ class ReadsbMCPServer:
                 else:
                     return [TextContent(type="text", text=f"No aircraft found to the {direction} of the feeder at this time")]
 
+            # Get route information for directional aircraft
+            route_info = {}
+            if include_routes:
+                directional_aircraft_list = [aircraft for _, _, aircraft in directional_aircraft]
+                route_info = await self._get_route_info(directional_aircraft_list)
+
             # Format results
             result = f"Aircraft to the {direction} of feeder ({feeder_lat:.4f}, {feeder_lon:.4f}):\n\n"
             result += f"Found {len(directional_aircraft)} aircraft\n\n"
@@ -677,6 +768,10 @@ class ReadsbMCPServer:
                 if hex_code != "Unknown":
                     map_link = f"{self.web_base}/?icao={hex_code}"
                     result += f"   Map Link: {map_link}\n"
+
+                # Add route information if available
+                if callsign in route_info:
+                    result += f"   Route: {route_info[callsign]}\n"
 
                 result += f"   Distance: {distance:.1f} nm\n"
                 result += f"   Bearing: {bearing:.1f}°\n"
