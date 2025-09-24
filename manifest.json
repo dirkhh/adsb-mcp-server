@@ -8,11 +8,11 @@
   },
   "server": {
     "type": "node",
-    "entry_point": "dist/readsb_mcp_server.js",
+    "entry_point": "dist/src/readsb_mcp_server.js",
     "mcp_config": {
       "command": "node",
       "args": [
-        "${__dirname}/dist/readsb_mcp_server.js",
+        "${__dirname}/dist/src/readsb_mcp_server.js",
         "--base-url",
         "${user_config.adsb_feeder_url}"
       ],

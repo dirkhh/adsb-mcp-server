@@ -4,14 +4,17 @@
  * Exposes aircraft tracking data and statistics from readsb running in Ultrafeeder container
  */
 
+// Debug flag - set to true for extensive debug output, false for minimal logging
+const debug_output = false;
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
-    CallToolRequestSchema,
-    InitializeRequestSchema,
-    ListResourcesRequestSchema,
-    ListToolsRequestSchema,
-    ReadResourceRequestSchema,
+  CallToolRequestSchema,
+  InitializeRequestSchema,
+  ListResourcesRequestSchema,
+  ListToolsRequestSchema,
+  ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import axios from 'axios';
 
@@ -20,6 +23,11 @@ const logger = {
   info: (message: string) => console.error(`[INFO] ${message}`),
   error: (message: string) => console.error(`[ERROR] ${message}`),
   warning: (message: string) => console.error(`[WARNING] ${message}`),
+  debug: (message: string) => {
+    if (debug_output) {
+      console.error(`[DEBUG] ${message}`);
+    }
+  },
 };
 
 interface Aircraft {
@@ -73,7 +81,9 @@ class ReadsbMCPServer {
   private server: Server;
 
   constructor(baseUrl: string = 'http://ultrafeeder') {
+    logger.info(`Creating ReadsbMCPServer with baseUrl: ${baseUrl}`);
     this.baseUrl = baseUrl.replace(/\/$/, '');
+    logger.debug(`Cleaned baseUrl: ${this.baseUrl}`);
 
     // Check if this is a remote URL (contains port) or local
     if (this.baseUrl.includes(':') && this.baseUrl.split('//')[1].includes(':')) {
@@ -81,6 +91,7 @@ class ReadsbMCPServer {
       this.apiBase = `${this.baseUrl}/data`;
       this.jsonBase = this.baseUrl;
       this.webBase = this.baseUrl;
+      logger.debug(`Using remote URL mode - apiBase: ${this.apiBase}, jsonBase: ${this.jsonBase}, webBase: ${this.webBase}`);
     } else {
       // Local URL - use standard ports
       const apiPort = 80;
@@ -89,21 +100,34 @@ class ReadsbMCPServer {
       this.apiBase = `${this.baseUrl}:${apiPort}/data`;
       this.jsonBase = `${this.baseUrl}:${jsonPort}`;
       this.webBase = `${this.baseUrl}:${webPort}`;
+      logger.debug(`Using local URL mode - apiBase: ${this.apiBase}, jsonBase: ${this.jsonBase}, webBase: ${this.webBase}`);
     }
 
+    logger.debug('Creating MCP Server instance...');
     this.server = new Server({
       name: 'readsb-mcp',
       version: '1.0.0',
+    }, {
+      capabilities: {
+        resources: {},
+        tools: {},
+      },
     });
+    logger.info('MCP Server instance created successfully');
 
+    logger.debug('Setting up request handlers...');
     this.setupHandlers();
+    logger.debug('Request handlers setup completed');
   }
 
   private setupHandlers() {
+    logger.debug('Setting up MCP request handlers');
+
     // Initialize handler - required by MCP protocol
-    this.server.setRequestHandler(InitializeRequestSchema, async () => {
-      return {
-        protocolVersion: '2024-11-05',
+    this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
+      logger.info(`Received initialize request: ${JSON.stringify(request)}`);
+      const response = {
+        protocolVersion: '2025-06-18',
         capabilities: {
           resources: {},
           tools: {},
@@ -113,42 +137,48 @@ class ReadsbMCPServer {
           version: '1.0.0',
         },
       };
+      logger.info(`Sending initialize response: ${JSON.stringify(response)}`);
+      return response;
     });
 
-    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      return {
-        resources: [
-          {
-            uri: `${this.apiBase}/aircraft.json`,
-            name: 'Aircraft Data',
-            description: 'Current aircraft positions and data',
-            mimeType: 'application/json',
-          },
-          {
-            uri: `${this.apiBase}/stats.json`,
-            name: 'Statistics',
-            description: 'readsb receiver statistics',
-            mimeType: 'application/json',
-          },
-          {
-            uri: `${this.apiBase}/receiver.json`,
-            name: 'Receiver Info',
-            description: 'Receiver configuration and status',
-            mimeType: 'application/json',
-          },
-          {
-            uri: `${this.webBase}/data/aircraft.json`,
-            name: 'TAR1090 Aircraft',
-            description: 'Aircraft data from TAR1090 web interface',
-            mimeType: 'application/json',
-          },
-        ],
-      };
+    this.server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
+      logger.debug(`Received list resources request: ${JSON.stringify(request)}`);
+      const resources = [
+        {
+          uri: `${this.apiBase}/aircraft.json`,
+          name: 'Aircraft Data',
+          description: 'Current aircraft positions and data',
+          mimeType: 'application/json',
+        },
+        {
+          uri: `${this.apiBase}/stats.json`,
+          name: 'Statistics',
+          description: 'readsb receiver statistics',
+          mimeType: 'application/json',
+        },
+        {
+          uri: `${this.apiBase}/receiver.json`,
+          name: 'Receiver Info',
+          description: 'Receiver configuration and status',
+          mimeType: 'application/json',
+        },
+        {
+          uri: `${this.webBase}/data/aircraft.json`,
+          name: 'TAR1090 Aircraft',
+          description: 'Aircraft data from TAR1090 web interface',
+          mimeType: 'application/json',
+        },
+      ];
+      logger.debug(`Sending list resources response with ${resources.length} resources`);
+      return { resources };
     });
 
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      logger.debug(`Received read resource request: ${JSON.stringify(request)}`);
       try {
+        logger.debug(`Fetching resource from: ${request.params.uri}`);
         const response = await axios.get(request.params.uri, { timeout: 10000 });
+        logger.debug(`Successfully fetched resource, response size: ${JSON.stringify(response.data).length} chars`);
         return {
           contents: [
             {
@@ -164,7 +194,8 @@ class ReadsbMCPServer {
       }
     });
 
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+    this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+      logger.debug(`Received list tools request: ${JSON.stringify(request)}`);
       return {
         tools: [
           {
@@ -314,11 +345,14 @@ class ReadsbMCPServer {
           },
         ],
       };
+      logger.debug(`Sending list tools response with 6 tools`);
     });
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      logger.debug(`Received call tool request: ${JSON.stringify(request)}`);
       try {
         const { name, arguments: args } = request.params;
+        logger.debug(`Calling tool: ${name} with args: ${JSON.stringify(args)}`);
 
         switch (name) {
           case 'get_aircraft_data':
@@ -1030,9 +1064,21 @@ class ReadsbMCPServer {
   }
 
   async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    logger.info('MCP server connected via stdio');
+    logger.info('Starting MCP server run() method');
+    try {
+      logger.debug('Creating StdioServerTransport...');
+      const transport = new StdioServerTransport();
+      logger.debug('Connecting server to transport...');
+      await this.server.connect(transport);
+      logger.debug('MCP server connected via stdio transport');
+
+      // Keep the process alive
+      logger.info('Server is running, waiting for requests...');
+      await new Promise(() => {}); // Keep alive indefinitely
+    } catch (error) {
+      logger.error(`Error in server run(): ${error}`);
+      throw error;
+    }
   }
 
   async testMode() {
@@ -1094,22 +1140,28 @@ async function main() {
     }
   }
 
-  logger.info(`parsed args: baseUrl=${baseUrl}, testMode=${testMode}`);
+  logger.debug(`parsed args: baseUrl=${baseUrl}, testMode=${testMode}`);
 
   const server = new ReadsbMCPServer(baseUrl);
-  logger.info('created server');
+  logger.debug('created server');
 
   if (testMode) {
-    await server.testMode();
+    // In test mode, we don't run the server transport, just create the server
+    // and let the test client interact with it directly via stdin/stdout
+    logger.debug('MCP server connected via stdio');
   } else {
+    logger.debug('Starting MCP server in stdio mode...');
     await server.run();
+    logger.debug('MCP server run() completed');
   }
-  logger.info('server finished');
+  logger.debug('server finished');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
+  logger.debug('Starting MCP server main process...');
   main().catch((error) => {
     logger.error(`Server error: ${error}`);
+    logger.error(`Error stack: ${error instanceof Error ? error.stack : 'No stack trace'}`);
     process.exit(1);
   });
 }

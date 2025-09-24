@@ -34,19 +34,11 @@ test_*.ts
 *_test.ts
 
 # Development files
-src/
+src/*.ts
 tsconfig.json
 .eslintrc*
 .prettierrc*
 
 # Scripts not needed in bundle
-setup_remote_config.ts
-update_version.ts
-install_mcpb.sh
-activate_and_test.sh
 launch_mcp_inspector.sh
 
-# Old config files
-mcpb.toml
-pyproject.toml
-uv.lock
