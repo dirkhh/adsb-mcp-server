@@ -17,6 +17,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -24,31 +29,30 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        uv sync --dev
 
     - name: Lint with flake8
       run: |
         # Stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # Exit-zero treats all errors as warnings. Line length set to 140
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=140 --statistics
+        uv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=140 --statistics
 
     - name: Check code formatting with black
       run: |
-        black --line-length=140 --check --diff .
+        uv run black --line-length=140 --check --diff .
 
     - name: Check import sorting with isort
       run: |
-        isort --check-only --diff .
+        uv run isort --check-only --diff .
 
     - name: Type checking with mypy
       run: |
-        mypy . --ignore-missing-imports || true
+        uv run mypy . --ignore-missing-imports || true
 
     - name: Test imports and basic functionality
       run: |
-        python -c "
+        uv run python -c "
         # Test main server import
         from readsb_mcp_server import ReadsbMCPServer
         print('✅ Main server imports successfully')

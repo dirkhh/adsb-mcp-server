@@ -28,7 +28,9 @@ async def test_remote_mcp_server(remote_host: str, remote_port: int = 8080):
 
     server_process = subprocess.Popen(
         [
-            sys.executable,
+            "uv",
+            "run",
+            "python",
             server_path,
             "--base-url",
             base_url,

@@ -27,7 +27,7 @@ class RemoteMCPClient:
         server_path = Path(__file__).parent.parent / "readsb_mcp_server.py"
 
         self.server_process = subprocess.Popen(
-            [sys.executable, server_path, "--base-url", self.base_url],
+            ["uv", "run", "python", server_path, "--base-url", self.base_url],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

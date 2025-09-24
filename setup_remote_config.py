@@ -38,8 +38,8 @@ def create_remote_config(remote_host: str, remote_port: int = 8080):
     config = {
         "mcpServers": {
             "readsb": {
-                "command": str(venv_python),
-                "args": [str(server_script), "--base-url", f"http://{remote_host}:{remote_port}"],
+                "command": "uv",
+                "args": ["run", "python", str(server_script), "--base-url", f"http://{remote_host}:{remote_port}"],
                 "env": {},
                 "disabled": False,
                 "autoApprove": [

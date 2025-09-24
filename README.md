@@ -17,23 +17,27 @@ This MCP server so far provides access to:
 
 ### Prerequisites
 - Python 3.10 or higher
+- [uv](https://github.com/astral-sh/uv) (Python package manager)
 - Access to an ADS-B feeder
 
 ### Install Dependencies
 ```bash
+# Install uv (if not already installed)
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/dirkhh/adsb-mcp-server.git
 cd adsb-mcp-server
 
-# Create and activate virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Install dependencies
+uv sync
 
-# Either install production dependencies
-pip install -r requirements.txt
-
-# or the development dependencies (which include production dependencies)
-pip install -r requirements-dev.txt
+# For development dependencies
+uv sync --dev
 ```
 
 # MCP Client Setup Guide
@@ -53,7 +57,7 @@ This guide will help you connect various MCP clients to your ADS-B MCP server.
 **Recommended: Use the automatic setup script:**
 
 ```bash
-python setup_remote_config.py
+uv run python setup_remote_config.py
 ```
 
 This script will:
@@ -85,7 +89,7 @@ npm install -g @modelcontextprotocol/inspector
 ### Run with ADS-B MCP server
 
 ```bash
-npx @modelcontextprotocol/inspector python /PATH/TO/adsb-mcp-server/readsb_mcp_server.py --base-url http://adsb-feeder.local
+npx @modelcontextprotocol/inspector uv run python /PATH/TO/adsb-mcp-server/readsb_mcp_server.py --base-url http://adsb-feeder.local
 ```
 
 This will open a web interface where you can test the MCP server tools.
@@ -99,7 +103,7 @@ You can create an MCP Bundle (`.mcpb` file) for easy distribution using the offi
 npm install -g @anthropic-ai/mcpb
 
 # Update version from git tag (optional)
-python update_version.py
+uv run python update_version.py
 
 # Create bundle using official tool
 mcpb pack .
@@ -113,7 +117,7 @@ Use the included simple MCP client:
 
 ```bash
 cd MCP
-python test/remote_mcp_client.py
+uv run python test/remote_mcp_client.py
 ```
 
 This provides an interactive command-line interface to test all the MCP tools.
@@ -124,7 +128,7 @@ Run the basic connection test:
 
 ```bash
 cd MCP
-python test/test_remote_connection.py
+uv run python test/test_remote_connection.py
 ```
 
 This will verify that the ADS-B MCP server is working correctly.

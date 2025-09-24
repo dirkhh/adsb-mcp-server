@@ -6,7 +6,8 @@ __pycache__/
 .Python
 *.so
 
-# Virtual environments (excluding the one we bundle)
+# Virtual environments
+venv/
 .venv/
 env/
 .env/
@@ -36,7 +37,6 @@ README.md
 LICENSE
 *.md
 setup.cfg
-pyproject.toml
 requirements*.txt
 
 # GitHub workflows (not needed in bundle)

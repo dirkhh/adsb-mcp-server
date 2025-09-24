@@ -10,15 +10,21 @@
     "type": "python",
     "entry_point": "readsb_mcp_server.py",
     "mcp_config": {
-      "command": "${__dirname}/venv/bin/python",
+      "command": "uv",
       "args": [
+        "run",
+        "--with",
+        "httpx",
+        "--with",
+        "pydantic",
+        "--with",
+        "mcp",
+        "python",
         "${__dirname}/readsb_mcp_server.py",
         "--base-url",
         "${user_config.adsb_feeder_url}"
       ],
-      "env": {
-        "PYTHONPATH": "${__dirname}"
-      }
+      "env": {}
     }
   },
   "user_config": {
