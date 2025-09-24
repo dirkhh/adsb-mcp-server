@@ -300,7 +300,14 @@ class ReadsbMCPServer:
                 altitude = aircraft.get("alt_baro", "Unknown")
                 distance = aircraft.get("r_dst", "Unknown")
 
-                summary += f"{i + 1:2d}. {callsign:<8} ({hex_code}) Alt: {altitude} ft, Dist: {distance} nm\n"
+                summary += f"{i + 1:2d}. {callsign:<8} ({hex_code})\n"
+
+                # Add map link if hex code is available
+                if hex_code != "Unknown":
+                    map_link = f"{self.web_base}/?icao={hex_code}"
+                    summary += f"     Map Link: {map_link}\n"
+
+                summary += f"     Alt: {altitude} ft, Dist: {distance} nm\n"
 
             if total_aircraft > 10:
                 summary += f"... and {total_aircraft - 10} more aircraft\n"
@@ -398,8 +405,15 @@ class ReadsbMCPServer:
 
                 result += f"Callsign: {callsign}\n"
                 result += f"Hex: {hex_code}\n"
+
+                # Add map link if hex code is available
+                if hex_code != "Unknown":
+                    map_link = f"{self.web_base}/?icao={hex_code}"
+                    result += f"Map Link: {map_link}\n"
+
                 result += f"Altitude: {altitude} ft\n"
                 result += f"Position: {lat}, {lon}\n"
+
                 result += "-" * 30 + "\n"
 
             return [TextContent(type="text", text=result)]
@@ -553,11 +567,18 @@ class ReadsbMCPServer:
                 lon = aircraft.get("lon", "Unknown")
 
                 result += f"{i}. {callsign:<10} ({hex_code})\n"
+
+                # Add map link if hex code is available
+                if hex_code != "Unknown":
+                    map_link = f"{self.web_base}/?icao={hex_code}"
+                    result += f"   Map Link: {map_link}\n"
+
                 result += f"   Distance: {distance:.1f} nm\n"
                 result += f"   Altitude: {altitude} ft\n"
                 result += f"   Speed: {speed} kts\n"
                 result += f"   Track: {track}°\n"
                 result += f"   Position: {lat:.4f}, {lon:.4f}\n"
+
                 result += "-" * 50 + "\n"
 
             return [TextContent(type="text", text=result)]
@@ -651,12 +672,19 @@ class ReadsbMCPServer:
                 lon = aircraft.get("lon", "Unknown")
 
                 result += f"{i}. {callsign:<10} ({hex_code})\n"
+
+                # Add map link if hex code is available
+                if hex_code != "Unknown":
+                    map_link = f"{self.web_base}/?icao={hex_code}"
+                    result += f"   Map Link: {map_link}\n"
+
                 result += f"   Distance: {distance:.1f} nm\n"
                 result += f"   Bearing: {bearing:.1f}°\n"
                 result += f"   Altitude: {altitude} ft\n"
                 result += f"   Speed: {speed} kts\n"
                 result += f"   Track: {track}°\n"
                 result += f"   Position: {lat:.4f}, {lon:.4f}\n"
+
                 result += "-" * 50 + "\n"
 
             return [TextContent(type="text", text=result)]
