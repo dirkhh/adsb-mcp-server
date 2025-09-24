@@ -51,3 +51,6 @@ dmypy.json
 # Temporary files
 *.tmp
 *.temp
+
+# Bundle files
+*.mcpb

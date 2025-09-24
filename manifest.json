@@ -1,0 +1,28 @@
+{
+  "manifest_version": "0.2",
+  "name": "adsb-mcp-server",
+  "version": "0.5.0",
+  "description": "MCP Server for ADS-B feeder data - Exposes aircraft tracking data and statistics",
+  "author": {
+    "name": "ADS-B MCP Server contributors"
+  },
+  "server": {
+    "type": "python",
+    "entry_point": "readsb_mcp_server.py",
+    "mcp_config": {
+      "command": "${__dirname}/venv/bin/python",
+      "args": [
+        "readsb_mcp_server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "${__dirname}"
+      }
+    }
+  },
+  "license": "GPLv3",
+  "homepage": "https://github.com/dirkhh/adsb-mcp-server",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dirkhh/adsb-mcp-server.git"
+  }
+}

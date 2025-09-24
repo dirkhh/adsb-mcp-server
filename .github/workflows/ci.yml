@@ -99,3 +99,37 @@ jobs:
         fi
 
         echo "✅ No major issues found"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Test MCP Bundle creation
+      run: |
+        # Install MCPB tool globally
+        npm install -g @anthropic-ai/mcpb
+
+        # Test bundle creation with official mcpb tool
+        mcpb pack .
+
+        # Verify bundle was created
+        BUNDLE_FILE=$(ls *.mcpb | head -n 1)
+        if [ -z "$BUNDLE_FILE" ]; then
+          echo "❌ MCP bundle was not created!"
+          exit 1
+        fi
+
+        BUNDLE_SIZE=$(stat -c%s "$BUNDLE_FILE")
+        echo "Bundle size: $BUNDLE_SIZE bytes"
+
+        if [ $BUNDLE_SIZE -lt 1000 ]; then
+          echo "❌ Bundle size seems too small ($BUNDLE_SIZE bytes)"
+          exit 1
+        fi
+
+        echo "✅ MCP Bundle created successfully: $BUNDLE_FILE"
+
+        # Clean up
+        rm -f *.mcpb
+        echo "✅ MCP Bundle creation test passed"

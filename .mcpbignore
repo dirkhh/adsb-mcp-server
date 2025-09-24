@@ -1,0 +1,56 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments (excluding the one we bundle)
+.venv/
+env/
+.env/
+
+# IDE files
+.vscode/
+.cursor-settings
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Type checking cache
+.mypy_cache/
+.pytest_cache/
+
+# Git
+.git/
+.gitignore
+
+# Documentation and config files not needed in bundle
+README.md
+LICENSE
+*.md
+setup.cfg
+pyproject.toml
+requirements*.txt
+
+# GitHub workflows (not needed in bundle)
+.github/
+
+# Test files
+test/
+
+# Scripts not needed in bundle
+setup_remote_config.py
+update_version.py
+install_mcpb.sh
+activate_and_test.sh
+launch_mcp_inspector.sh
+
+# Old config files
+mcpb.toml

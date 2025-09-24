@@ -16,7 +16,7 @@ This MCP server so far provides access to:
 ## Installation
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.10 or higher
 - Access to an ADS-B feeder
 
 ### Install Dependencies
@@ -119,6 +119,23 @@ npx @modelcontextprotocol/inspector python /PATH/TO/adsb-mcp-server/readsb_mcp_s
 ```
 
 This will open a web interface where you can test the MCP server tools.
+
+## Creating MCP Bundles
+
+You can create an MCP Bundle (`.mcpb` file) for easy distribution using the official MCPB tool:
+
+```bash
+# Install the official MCPB tool (Node.js required)
+npm install -g @anthropic-ai/mcpb
+
+# Update version from git tag (optional)
+python update_version.py
+
+# Create bundle using official tool
+mcpb pack .
+```
+
+The bundle will be created as `adsb-mcp-server.mcpb` and can be distributed and installed in MCP-compatible clients. The bundle includes all Python dependencies for self-contained operation.
 
 ## Option 3: Custom Python Client
 
