@@ -16,28 +16,21 @@ This MCP server so far provides access to:
 ## Installation
 
 ### Prerequisites
-- Python 3.10 or higher
-- [uv](https://github.com/astral-sh/uv) (Python package manager)
+- Node.js 18.0 or higher
+- npm (comes with Node.js)
 - Access to an ADS-B feeder
 
 ### Install Dependencies
 ```bash
-# Install uv (if not already installed)
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Windows
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-
 # Clone the repository
 git clone https://github.com/dirkhh/adsb-mcp-server.git
 cd adsb-mcp-server
 
 # Install dependencies
-uv sync
+npm install
 
-# For development dependencies
-uv sync --dev
+# Build the project
+npm run build
 ```
 
 # MCP Client Setup Guide
@@ -57,7 +50,8 @@ This guide will help you connect various MCP clients to your ADS-B MCP server.
 **Recommended: Use the automatic setup script:**
 
 ```bash
-uv run python setup_remote_config.py
+npm run build
+node dist/setup_remote_config.js
 ```
 
 This script will:
@@ -89,10 +83,30 @@ npm install -g @modelcontextprotocol/inspector
 ### Run with ADS-B MCP server
 
 ```bash
-npx @modelcontextprotocol/inspector uv run python /PATH/TO/adsb-mcp-server/readsb_mcp_server.py --base-url http://adsb-feeder.local
+npm run build
+npx @modelcontextprotocol/inspector node dist/readsb_mcp_server.js --base-url http://adsb-feeder.local
 ```
 
 This will open a web interface where you can test the MCP server tools.
+
+## Version Management
+
+The project automatically manages version information based on git tags:
+
+- **Automatic versioning**: Version is automatically updated from the latest git tag
+- **Consistent naming**: Project name is standardized as `adsb-mcp-server`
+- **Pre-build updates**: Version is updated automatically before each build
+
+```bash
+# Update version manually (based on latest git tag)
+npm run update-version
+
+# Create a new release tag
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The version script updates both `package.json` and `manifest.json` to ensure consistency across all project files.
 
 ## Creating MCP Bundles
 
@@ -102,22 +116,22 @@ You can create an MCP Bundle (`.mcpb` file) for easy distribution using the offi
 # Install the official MCPB tool (Node.js required)
 npm install -g @anthropic-ai/mcpb
 
-# Update version from git tag (optional)
-uv run python update_version.py
+# Build the project
+npm run build
 
 # Create bundle using official tool
 mcpb pack .
 ```
 
-The bundle will be created as `adsb-mcp-server.mcpb` and can be distributed and installed in MCP-compatible clients. The bundle includes all Python dependencies for self-contained operation.
+The bundle will be created as `adsb-mcp-server.mcpb` and can be distributed and installed in MCP-compatible clients. The bundle includes all Node.js dependencies for self-contained operation.
 
-## Option 3: Custom Python Client
+## Option 3: Custom Node.js Client
 
 Use the included simple MCP client:
 
 ```bash
-cd MCP
-uv run python test/remote_mcp_client.py
+npm run build
+node dist/test/remote_mcp_client.js
 ```
 
 This provides an interactive command-line interface to test all the MCP tools.
@@ -127,8 +141,8 @@ This provides an interactive command-line interface to test all the MCP tools.
 Run the basic connection test:
 
 ```bash
-cd MCP
-uv run python test/test_remote_connection.py
+npm run build
+node dist/test/test_remote_connection.js
 ```
 
 This will verify that the ADS-B MCP server is working correctly.

@@ -7,20 +7,12 @@
     "name": "ADS-B MCP Server contributors"
   },
   "server": {
-    "type": "python",
-    "entry_point": "readsb_mcp_server.py",
+    "type": "node",
+    "entry_point": "dist/readsb_mcp_server.js",
     "mcp_config": {
-      "command": "uv",
+      "command": "node",
       "args": [
-        "run",
-        "--with",
-        "httpx",
-        "--with",
-        "pydantic",
-        "--with",
-        "mcp",
-        "python",
-        "${__dirname}/readsb_mcp_server.py",
+        "${__dirname}/dist/readsb_mcp_server.js",
         "--base-url",
         "${user_config.adsb_feeder_url}"
       ],
@@ -35,10 +27,18 @@
       "required": true
     }
   },
-  "license": "GPLv3",
+  "license": "GPL-3.0-only",
   "homepage": "https://github.com/dirkhh/adsb-mcp-server",
   "repository": {
     "type": "git",
     "url": "https://github.com/dirkhh/adsb-mcp-server.git"
-  }
+  },
+  "keywords": [
+    "adsb",
+    "mcp",
+    "readsb",
+    "ultrafeeder",
+    "aircraft",
+    "tracking"
+  ]
 }

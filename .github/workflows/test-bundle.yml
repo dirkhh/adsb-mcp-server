@@ -1,134 +1,74 @@
-name: Test MCP Bundle Creation
+name: Test Bundle
 
 on:
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # Allow manual triggering
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  test-mcp-bundle:
+  test-bundle:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Fetch all history for git describe
+      - uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
+      - name: Install dependencies
+        run: |
+          # Install MCPB tool globally
+          npm install -g @anthropic-ai/mcpb
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+          # Install project dependencies
+          npm ci
 
-    - name: Install dependencies
-      run: |
-        # Install MCPB tool globally
-        npm install -g @anthropic-ai/mcpb
+      - name: Build project
+        run: |
+          npm run build
 
-        # Install Python dependencies
-        uv sync
+      - name: Test MCP Bundle creation
+        run: |
+          # Test bundle creation with official mcpb tool
+          mcpb pack .
 
-    - name: Test MCP Bundle creation
-      run: |
-        # Test bundle creation with official mcpb tool
-        mcpb pack .
+      - name: Verify bundle
+        run: |
+          # Verify bundle file exists
+          if [ -f "adsb-mcp-server.mcpb" ]; then
+            echo "✅ Bundle file created successfully"
+            ls -la adsb-mcp-server.mcpb
 
-        # Verify bundle was created
-        BUNDLE_FILE=$(ls *.mcpb | head -n 1)
-        if [ -z "$BUNDLE_FILE" ]; then
-          echo "Error: MCP bundle was not created!"
-          exit 1
-        fi
+            # Check bundle size
+            BUNDLE_SIZE=$(stat -c%s "adsb-mcp-server.mcpb")
+            echo "Bundle size: $BUNDLE_SIZE bytes"
 
-        echo "Bundle created: $BUNDLE_FILE"
+            # Verify contents
+            echo "Bundle contents:"
+            unzip -l adsb-mcp-server.mcpb
 
-        # Check bundle size
-        BUNDLE_SIZE=$(stat -c%s "$BUNDLE_FILE")
-        echo "Bundle size: $BUNDLE_SIZE bytes"
+            # Verify manifest exists
+            if unzip -l adsb-mcp-server.mcpb | grep -q "manifest.json"; then
+              echo "✅ Manifest found in bundle"
+            else
+              echo "❌ Manifest not found in bundle"
+              exit 1
+            fi
 
-        if [ $BUNDLE_SIZE -lt 1000 ]; then
-          echo "Warning: Bundle size seems too small ($BUNDLE_SIZE bytes)"
-        fi
+            # Verify compiled JavaScript exists
+            if unzip -l adsb-mcp-server.mcpb | grep -q "dist/readsb_mcp_server.js"; then
+              echo "✅ Compiled server found in bundle"
+            else
+              echo "❌ Compiled server not found in bundle"
+              exit 1
+            fi
 
-        # Verify bundle contents
-        echo "Bundle contents:"
-        unzip -l "$BUNDLE_FILE"
+          else
+            echo "❌ Bundle file not created"
+            exit 1
+          fi
 
-        # Check that manifest.json exists (mcpb format may use different structure)
-        if unzip -q "$BUNDLE_FILE" manifest.json 2>/dev/null; then
-          echo "Found manifest.json"
-        elif unzip -q "$BUNDLE_FILE" mcpb.toml 2>/dev/null; then
-          echo "Found mcpb.toml"
-        else
-          echo "Warning: No manifest.json or mcpb.toml found in bundle"
-        fi
-
-        # Validate bundle structure
-        if [ -f "manifest.json" ]; then
-          python -c "
-          import json
-          with open('manifest.json', 'r') as f:
-              manifest = json.load(f)
-
-          required_fields = ['name', 'version', 'description', 'mcp']
-          for field in required_fields:
-              if field not in manifest:
-                  print(f'Error: Missing required field: {field}')
-                  exit(1)
-
-          mcp_fields = ['protocol', 'capabilities', 'entrypoint', 'requirements', 'tools']
-          for field in mcp_fields:
-              if field not in manifest['mcp']:
-                  print(f'Error: Missing MCP field: {field}')
-                  exit(1)
-
-          print('✅ Manifest validation passed')
-          print(f'Name: {manifest[\"name\"]}')
-          print(f'Version: {manifest[\"version\"]}')
-          print(f'Tools: {len(manifest[\"mcp\"][\"tools\"])}')
-          "
-          rm -f manifest.json
-        else
-          echo "✅ Bundle created successfully (no manifest validation needed for mcpb format)"
-        fi
-
-        # Clean up
-        rm -f *.mcpb
-
-    - name: Test with custom version
-      run: |
-        # Test that mcpb can build with the configuration
-        echo "Testing mcpb build process..."
-        mcpb build
-
-        # Verify bundle was created
-        BUNDLE_FILE=$(ls *.mcpb | head -n 1)
-        if [ -z "$BUNDLE_FILE" ]; then
-          echo "Error: MCP bundle was not created in version test!"
-          exit 1
-        fi
-
-        echo "✅ Version test passed - bundle created: $BUNDLE_FILE"
-
-        # Clean up
-        rm -f *.mcpb
-
-    - name: Summary
-      run: |
-        echo "## Bundle Test Summary" >> $GITHUB_STEP_SUMMARY
-        echo "✅ MCP Bundle creation test passed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Manifest validation passed" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Version detection test passed" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "The MCP bundle creation process is working correctly!" >> $GITHUB_STEP_SUMMARY
+      - name: Clean up
+        run: |
+          rm -f adsb-mcp-server.mcpb

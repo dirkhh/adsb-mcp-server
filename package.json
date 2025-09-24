@@ -1,0 +1,53 @@
+{
+  "name": "adsb-mcp-server",
+  "version": "0.5.0",
+  "description": "MCP Server for ADS-B feeder data - Exposes aircraft tracking data and statistics",
+  "main": "dist/readsb_mcp_server.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/readsb_mcp_server.ts",
+    "start": "node dist/readsb_mcp_server.js",
+    "test": "tsx test/test_remote_connection.ts",
+    "lint": "eslint src test --ext .ts",
+    "format": "prettier --write src test",
+    "type-check": "tsc --noEmit",
+    "update-version": "node scripts/update_version.js",
+    "prebuild": "npm run update-version"
+  },
+  "keywords": [
+    "adsb",
+    "mcp",
+    "readsb",
+    "ultrafeeder",
+    "aircraft",
+    "tracking",
+    "typescript",
+    "nodejs"
+  ],
+  "author": {
+    "name": "ADS-B MCP Server contributors"
+  },
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dirkhh/adsb-mcp-server.git"
+  },
+  "homepage": "https://github.com/dirkhh/adsb-mcp-server"
+}

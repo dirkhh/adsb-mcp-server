@@ -1,4 +1,0 @@
-# Core MCP dependencies for production use
-mcp>=1.14.0
-httpx>=0.25.0
-pydantic>=2.0.0

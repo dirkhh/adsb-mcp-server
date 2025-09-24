@@ -21,11 +21,15 @@ fi
 read -r -p "Enter the port (default 8080): " REMOTE_PORT
 REMOTE_PORT=${REMOTE_PORT:-8080}
 
-echo "Launching MCP Inspector for $REMOTE_HOST:$REMOTE_PORT..."
+# Get inspector proxy port (default to 3000)
+read -r -p "Enter the MCP Inspector proxy port (default 3000): " INSPECTOR_PORT
+INSPECTOR_PORT=${INSPECTOR_PORT:-3000}
+
+echo "Launching MCP Inspector for $REMOTE_HOST:$REMOTE_PORT on proxy port $INSPECTOR_PORT..."
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Launch MCP Inspector
-npx @modelcontextprotocol/inspector uv run python "$SCRIPT_DIR/readsb_mcp_server.py" --base-url "http://$REMOTE_HOST:$REMOTE_PORT"
+# Launch MCP Inspector with custom proxy port
+npx @modelcontextprotocol/inspector --port "$INSPECTOR_PORT" node "$SCRIPT_DIR/dist/readsb_mcp_server.js" --base-url "http://$REMOTE_HOST:$REMOTE_PORT"
 

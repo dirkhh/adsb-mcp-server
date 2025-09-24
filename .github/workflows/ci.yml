@@ -12,128 +12,98 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        node-version: [18, 20, 22]
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
       with:
-        version: "latest"
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+        node-version: ${{ matrix.node-version }}
 
     - name: Install dependencies
       run: |
-        uv sync --dev
+        npm ci
 
-    - name: Lint with flake8
+    - name: Build project
       run: |
-        # Stop the build if there are Python syntax errors or undefined names
-        uv run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Exit-zero treats all errors as warnings. Line length set to 140
-        uv run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=140 --statistics
+        npm run build
 
-    - name: Check code formatting with black
+    - name: Lint with ESLint
       run: |
-        uv run black --line-length=140 --check --diff .
+        npm run lint
 
-    - name: Check import sorting with isort
+    - name: Check code formatting with Prettier
       run: |
-        uv run isort --check-only --diff .
+        npm run format -- --check
 
-    - name: Type checking with mypy
+    - name: Type checking with TypeScript
       run: |
-        uv run mypy . --ignore-missing-imports || true
+        npm run type-check
 
     - name: Test imports and basic functionality
       run: |
-        uv run python -c "
         # Test main server import
-        from readsb_mcp_server import ReadsbMCPServer
-        print('✅ Main server imports successfully')
-
-        # Test shared utilities import
-        from shared_utils import get_remote_host_and_port
-        print('✅ Shared utilities import successfully')
-
-        # Test server initialization
-        server = ReadsbMCPServer('http://localhost:8080')
-        print('✅ Server initializes successfully')
-
-        print('✅ All basic tests passed')
+        node -e "
+        import('./dist/readsb_mcp_server.js').then(() => {
+          console.log('✅ Main server imports successfully');
+        }).catch(err => {
+          console.error('❌ Main server import failed:', err);
+          process.exit(1);
+        });
         "
 
-    - name: Test script imports
+    - name: Check for hardcoded paths
       run: |
-        # Test that test scripts can import their dependencies
-        python -c "
-        import sys
-        import os
-        sys.path.insert(0, './test')
-
-        # Test test script imports
-        from test_remote_connection import test_remote_mcp_server
-        from remote_mcp_client import RemoteMCPClient
-        from debug_mcp_server import debug_connection
-
-        print('✅ All test scripts import successfully')
-        "
-
-    - name: Check for common issues
-      run: |
-        # Check for TODO/FIXME comments
-        if grep -r "TODO\|FIXME" . --include="*.py" --exclude-dir=.git --exclude-dir=venv; then
-          echo "⚠️  Found TODO/FIXME comments - consider addressing them"
-        fi
-
-        # Check for print statements (should use logging instead)
-        if grep -r "print(" . --include="*.py" --exclude-dir=.git --exclude-dir=test --exclude-dir=venv --exclude="setup_remote_config.py"; then
-          echo "⚠️  Found print statements in non-test files - consider using logging"
-        fi
-
-        # Check for hardcoded paths
-        if grep -r "/Users/\|/home/\|C:\\\\" . --include="*.py" --exclude-dir=.git --exclude-dir=venv; then
-          echo "❌ Found hardcoded paths - these should be relative or configurable"
+        if grep -r "/Users/" . --exclude-dir=node_modules --exclude-dir=.git; then
+          echo "❌ Found hardcoded paths"
           exit 1
+        else
+          echo "✅ No hardcoded paths found"
         fi
 
-        echo "✅ No major issues found"
+    - name: Check for TODO/FIXME comments
+      run: |
+        if grep -r "TODO\|FIXME" . --exclude-dir=node_modules --exclude-dir=.git; then
+          echo "⚠️  Found TODO/FIXME comments (not blocking)"
+        else
+          echo "✅ No TODO/FIXME comments found"
+        fi
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+    - name: Check for console.log statements
+      run: |
+        if grep -r "console\.log" src/ test/ --exclude="setup_remote_config.ts"; then
+          echo "❌ Found console.log statements (should use logger)"
+          exit 1
+        else
+          echo "✅ No console.log statements found"
+        fi
 
     - name: Test MCP Bundle creation
       run: |
-        # Install MCPB tool globally
+        # Install MCPB tool
         npm install -g @anthropic-ai/mcpb
 
-        # Test bundle creation with official mcpb tool
+        # Test bundle creation
         mcpb pack .
 
-        # Verify bundle was created
-        BUNDLE_FILE=$(ls *.mcpb | head -n 1)
-        if [ -z "$BUNDLE_FILE" ]; then
-          echo "❌ MCP bundle was not created!"
+        # Verify bundle exists
+        if [ -f "adsb-mcp-server.mcpb" ]; then
+          echo "✅ Bundle created successfully"
+          ls -la adsb-mcp-server.mcpb
+
+          # Check bundle size (should be reasonable)
+          BUNDLE_SIZE=$(stat -c%s "adsb-mcp-server.mcpb")
+          if [ $BUNDLE_SIZE -lt 1000000 ]; then
+            echo "✅ Bundle size is reasonable: $BUNDLE_SIZE bytes"
+          else
+            echo "⚠️  Bundle size is large: $BUNDLE_SIZE bytes"
+          fi
+
+          # Verify manifest exists in bundle
+          unzip -l adsb-mcp-server.mcpb | grep manifest.json && echo "✅ Manifest found in bundle"
+        else
+          echo "❌ Bundle creation failed"
           exit 1
         fi
-
-        BUNDLE_SIZE=$(stat -c%s "$BUNDLE_FILE")
-        echo "Bundle size: $BUNDLE_SIZE bytes"
-
-        if [ $BUNDLE_SIZE -lt 1000 ]; then
-          echo "❌ Bundle size seems too small ($BUNDLE_SIZE bytes)"
-          exit 1
-        fi
-
-        echo "✅ MCP Bundle created successfully: $BUNDLE_FILE"
-
-        # Clean up
-        rm -f *.mcpb
-        echo "✅ MCP Bundle creation test passed"

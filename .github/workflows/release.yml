@@ -1,4 +1,4 @@
-name: Create MCP Bundle Release
+name: Release
 
 on:
   push:
@@ -6,129 +6,38 @@ on:
       - 'v*'
 
 jobs:
-  create-mcp-bundle:
+  release:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Fetch all history for git describe
+      - uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
+      - name: Install dependencies
+        run: |
+          # Install MCPB tool globally
+          npm install -g @anthropic-ai/mcpb
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+          # Install project dependencies
+          npm ci
 
-    - name: Install dependencies
-      run: |
-        # Install MCPB tool globally
-        npm install -g @anthropic-ai/mcpb
+      - name: Build project
+        run: |
+          npm run build
 
-        # Install Python dependencies
-        uv sync
+      - name: Create MCP Bundle
+        run: |
+          # Create bundle using official tool
+          mcpb pack .
 
-    - name: Update version in manifest.json
-      run: |
-        uv run python update_version.py
-
-    - name: Create MCP Bundle
-      run: |
-        mcpb pack .
-
-    - name: Get version from tag
-      id: get_version
-      run: |
-        # Extract version from tag (remove 'v' prefix if present)
-        VERSION=${GITHUB_REF#refs/tags/}
-        VERSION=${VERSION#v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-        echo "Created bundle for version: $VERSION"
-
-    - name: Rename bundle with version
-      run: |
-        # mcpb creates a bundle with the name from mcpb.toml
-        # Rename it to include the version from tag
-        BUNDLE_NAME="adsb-mcp-server-v${{ steps.get_version.outputs.version }}.mcpb"
-
-        # Find the generated bundle file
-        GENERATED_BUNDLE=$(ls *.mcpb | head -n 1)
-        if [ -z "$GENERATED_BUNDLE" ]; then
-          echo "Error: No MCP bundle found!"
-          ls -la *.mcpb || echo "No .mcpb files found"
-          exit 1
-        fi
-
-        # Rename to versioned name
-        mv "$GENERATED_BUNDLE" "$BUNDLE_NAME"
-        echo "BUNDLE_NAME=$BUNDLE_NAME" >> $GITHUB_ENV
-        echo "Bundle created: $BUNDLE_NAME"
-
-    - name: Upload MCP Bundle as release artifact
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ env.BUNDLE_NAME }}
-        asset_name: ${{ env.BUNDLE_NAME }}
-        asset_content_type: application/zip
-
-    - name: Create Release (if not exists)
-      if: github.event.release == null
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ steps.get_version.outputs.tag }}
-        name: Release ${{ steps.get_version.outputs.tag }}
-        body: |
-          ## ADS-B MCP Server ${{ steps.get_version.outputs.tag }}
-
-          ### MCP Bundle
-          Download the `adsb-mcp-server-v${{ steps.get_version.outputs.version }}.mcpb` file and install it in your MCP client.
-
-          ### Features
-          - Real-time aircraft tracking from readsb/Ultrafeeder
-          - Flight route information via adsb.im API (optional)
-          - Interactive map links for each aircraft
-          - Multiple search options (callsign, hex, direction, distance)
-          - Comprehensive statistics and range information
-
-          ### Installation
-          1. Download the `.mcpb` file
-          2. Install in your MCP client using bundle installation feature
-          3. Configure the `base_url` parameter for your ADS-B feeder
-
-          ### Documentation
-          See [README.md](https://github.com/dirkhh/adsb-mcp-server/blob/main/README.md) for detailed setup instructions.
-        files: ${{ env.BUNDLE_NAME }}
-        draft: false
-        prerelease: false
-
-    - name: Upload MCP Bundle to release (if release exists)
-      if: github.event.release != null
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ env.BUNDLE_NAME }}
-
-    - name: Summary
-      run: |
-        echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Tag**: ${{ steps.get_version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Version**: ${{ steps.get_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Bundle**: ${{ env.BUNDLE_NAME }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Size**: $(ls -lh ${{ env.BUNDLE_NAME }} | awk '{print $5}')" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Bundle Contents" >> $GITHUB_STEP_SUMMARY
-        unzip -l ${{ env.BUNDLE_NAME }} | tail -n +4 | head -n -2 | awk '{print "- " $4}' >> $GITHUB_STEP_SUMMARY
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            adsb-mcp-server.mcpb
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
