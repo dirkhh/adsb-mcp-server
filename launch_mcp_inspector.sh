@@ -23,6 +23,9 @@ REMOTE_PORT=${REMOTE_PORT:-8080}
 
 echo "Launching MCP Inspector for $REMOTE_HOST:$REMOTE_PORT..."
 
+# Get the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Launch MCP Inspector
-npx @modelcontextprotocol/inspector python /Users/hohndel/src/adsb-feeder-image/MCP/readsb_mcp_server.py --base-url "http://$REMOTE_HOST:$REMOTE_PORT"
+npx @modelcontextprotocol/inspector uv run python "$SCRIPT_DIR/readsb_mcp_server.py" --base-url "http://$REMOTE_HOST:$REMOTE_PORT"
 
