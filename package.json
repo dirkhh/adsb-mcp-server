@@ -1,13 +1,13 @@
 {
   "name": "adsb-mcp-server",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MCP Server for ADS-B feeder data - Exposes aircraft tracking data and statistics",
-  "main": "dist/readsb_mcp_server.js",
+  "main": "dist/src/readsb_mcp_server.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/readsb_mcp_server.ts",
-    "start": "node dist/readsb_mcp_server.js",
+    "start": "node dist/src/readsb_mcp_server.js",
     "test": "tsx test/test_remote_connection.ts",
     "lint": "eslint src test --ext .ts",
     "format": "prettier --write src test",

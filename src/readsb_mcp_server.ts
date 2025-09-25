@@ -1177,9 +1177,11 @@ async function main() {
 // Handle URL encoding differences between import.meta.url and process.argv[1]
 const currentFileUrl = import.meta.url.replace(/%20/g, ' ');
 const scriptPath = process.argv[1];
-const isMainModule = currentFileUrl === `file://${scriptPath}` ||
-                     currentFileUrl.endsWith(scriptPath) ||
-                     currentFileUrl.includes(scriptPath.replace(/\\/g, '/'));
+const isMainModule = scriptPath && (
+  currentFileUrl === `file://${scriptPath}` ||
+  currentFileUrl.endsWith(scriptPath) ||
+  currentFileUrl.includes(scriptPath.replace(/\\/g, '/'))
+);
 
 if (isMainModule) {
   logger.info('Starting MCP server main process...');

@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "adsb-mcp-server",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MCP Server for ADS-B feeder data - Exposes aircraft tracking data and statistics",
   "author": {
     "name": "ADS-B MCP Server contributors"

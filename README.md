@@ -84,7 +84,7 @@ npm install -g @modelcontextprotocol/inspector
 
 ```bash
 npm run build
-npx @modelcontextprotocol/inspector node dist/readsb_mcp_server.js --base-url http://adsb-feeder.local
+npx @modelcontextprotocol/inspector node dist/src/readsb_mcp_server.js --base-url http://adsb-feeder.local
 ```
 
 This will open a web interface where you can test the MCP server tools.

@@ -31,5 +31,5 @@ echo "Launching MCP Inspector for $REMOTE_HOST:$REMOTE_PORT on proxy port $INSPE
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Launch MCP Inspector with custom proxy port
-npx @modelcontextprotocol/inspector --port "$INSPECTOR_PORT" node "$SCRIPT_DIR/dist/readsb_mcp_server.js" --base-url "http://$REMOTE_HOST:$REMOTE_PORT"
+npx @modelcontextprotocol/inspector --port "$INSPECTOR_PORT" node "$SCRIPT_DIR/dist/src/readsb_mcp_server.js" --base-url "http://$REMOTE_HOST:$REMOTE_PORT"
 

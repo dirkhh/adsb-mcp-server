@@ -46,7 +46,7 @@ jobs:
       run: |
         # Test main server import
         node -e "
-        import('./dist/readsb_mcp_server.js').then(() => {
+        import('./dist/src/readsb_mcp_server.js').then(() => {
           console.log('✅ Main server imports successfully');
         }).catch(err => {
           console.error('❌ Main server import failed:', err);

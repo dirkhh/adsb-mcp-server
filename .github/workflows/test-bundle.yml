@@ -57,7 +57,7 @@ jobs:
             fi
 
             # Verify compiled JavaScript exists
-            if unzip -l adsb-mcp-server.mcpb | grep -q "dist/readsb_mcp_server.js"; then
+            if unzip -l adsb-mcp-server.mcpb | grep -q "dist/src/readsb_mcp_server.js"; then
               echo "✅ Compiled server found in bundle"
             else
               echo "❌ Compiled server not found in bundle"
