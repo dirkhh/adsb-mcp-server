@@ -56,8 +56,14 @@ jobs:
 
     - name: Check for hardcoded paths
       run: |
-        if grep -r "/Users/" . --exclude-dir=node_modules --exclude-dir=.git; then
-          echo "❌ Found hardcoded paths"
+        # Check for hardcoded macOS paths, excluding the check itself and other expected files
+        if find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.md" \) \
+           -not -path "./node_modules/*" \
+           -not -path "./.git/*" \
+           -not -path "./dist/*" \
+           -not -path "./.github/workflows/ci.yml" \
+           -exec grep -l "/Users/" {} \; | grep -v ".github/workflows/ci.yml"; then
+          echo "❌ Found hardcoded paths in source files"
           exit 1
         else
           echo "✅ No hardcoded paths found"

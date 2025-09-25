@@ -17,6 +17,7 @@
     "preversion": "npm run sync-manifest",
     "postversion": "git add manifest.json && git commit --amend --no-edit",
     "sync-manifest": "node scripts/sync_manifest_version.js",
+    "generate-manifest": "node scripts/generate_manifest.js",
     "release": "standard-version",
     "release:patch": "standard-version --release-as patch",
     "release:minor": "standard-version --release-as minor",
