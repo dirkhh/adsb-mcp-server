@@ -94,7 +94,7 @@ function main() {
 
   // Step 4: Create git tag
   console.log('🏷️  Creating git tag...');
-  execSync(`git tag v${newVersion}`, { stdio: 'inherit' });
+  execSync(`git tag -a v${newVersion} -m "bump version from ${oldVersion} to ${newVersion}"`, { stdio: 'inherit' });
 
   console.log(`✅ Version bump complete: v${newVersion}`);
   console.log('📤 Run: git push --follow-tags');

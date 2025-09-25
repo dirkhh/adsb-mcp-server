@@ -8,7 +8,7 @@ This was initially written in order to provide an MCP server connected to the <a
 
 This MCP server so far provides access to:
 
-- **Aircraft Data**: Real-time aircraft positions, callsigns, altitudes, and tracking information
+- **Aircraft Data**: Real-time aircraft positions, callsigns, altitudes, and tracking information plus optionally (where available) route information for commercial flights
 - **Receiver Statistics**: Performance metrics, message counts, and system status
 - **Search Functionality**: Find specific aircraft by callsign, hex code, or flight number
 - **Range Statistics**: Coverage area and signal range information
@@ -88,25 +88,6 @@ npx @modelcontextprotocol/inspector node dist/src/readsb_mcp_server.js --base-ur
 ```
 
 This will open a web interface where you can test the MCP server tools.
-
-## Version Management
-
-The project automatically manages version information based on git tags:
-
-- **Automatic versioning**: Version is automatically updated from the latest git tag
-- **Consistent naming**: Project name is standardized as `adsb-mcp-server`
-- **Pre-build updates**: Version is updated automatically before each build
-
-```bash
-# Update version manually (based on latest git tag)
-npm run update-version
-
-# Create a new release tag
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-The version script updates both `package.json` and `manifest.json` to ensure consistency across all project files.
 
 ## Creating MCP Bundles
 
