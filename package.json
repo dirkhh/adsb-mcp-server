@@ -13,7 +13,14 @@
     "format": "prettier --write src test",
     "type-check": "tsc --noEmit",
     "update-version": "node scripts/update_version.js",
-    "prebuild": "npm run update-version"
+    "prebuild": "npm run update-version",
+    "preversion": "npm run sync-manifest",
+    "postversion": "git add manifest.json && git commit --amend --no-edit",
+    "sync-manifest": "node scripts/sync_manifest_version.js",
+    "release": "standard-version",
+    "release:patch": "standard-version --release-as patch",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major"
   },
   "keywords": [
     "adsb",
@@ -42,6 +49,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
     "prettier": "^3.0.0",
+    "standard-version": "^9.5.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
   },
