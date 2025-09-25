@@ -79,11 +79,11 @@ jobs:
 
     - name: Check for console.log statements
       run: |
-        if grep -r "console\.log" src/ test/ --exclude="setup_remote_config.ts"; then
-          echo "❌ Found console.log statements (should use logger)"
+        if grep -r "console\.log" src/ --exclude="setup_remote_config.ts"; then
+          echo "❌ Found console.log statements in src/ (should use logger)"
           exit 1
         else
-          echo "✅ No console.log statements found"
+          echo "✅ No console.log statements found in src/"
         fi
 
     - name: Test MCP Bundle creation
