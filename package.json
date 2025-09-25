@@ -1,6 +1,6 @@
 {
   "name": "adsb-mcp-server",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "MCP Server for ADS-B feeder data - Exposes aircraft tracking data and statistics",
   "main": "dist/src/readsb_mcp_server.js",
   "type": "module",
