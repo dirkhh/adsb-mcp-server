@@ -10,11 +10,11 @@ const debug_output = false;
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
-  CallToolRequestSchema,
-  InitializeRequestSchema,
-  ListResourcesRequestSchema,
-  ListToolsRequestSchema,
-  ReadResourceRequestSchema,
+    CallToolRequestSchema,
+    InitializeRequestSchema,
+    ListResourcesRequestSchema,
+    ListToolsRequestSchema,
+    ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import axios from 'axios';
 import { readFileSync } from 'fs';
@@ -705,7 +705,7 @@ class ReadsbMCPServer {
     };
   }
 
-  private async getRangeStatistics(args: any) {
+  private async getRangeStatistics(_args: any) {
     // Try to get receiver info which may contain range data
     const receiverData: Receiver = await this.fetchJson('receiver.json');
     const statsData: Stats = await this.fetchJson('stats.json');
