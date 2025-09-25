@@ -17,6 +17,16 @@ import {
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import axios from 'axios';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+// Get version from package.json
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJsonPath = join(__dirname, '../../package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const VERSION = packageJson.version;
 
 // Configure logging to stderr to avoid interfering with stdio protocol
 const logger = {
@@ -105,8 +115,8 @@ class ReadsbMCPServer {
 
     logger.debug('Creating MCP Server instance...');
     this.server = new Server({
-      name: 'readsb-mcp',
-      version: '1.0.0',
+      name: 'adsb-mcp-server',
+      version: VERSION,
     }, {
       capabilities: {
         resources: {},
@@ -129,12 +139,18 @@ class ReadsbMCPServer {
       const response = {
         protocolVersion: '2025-06-18',
         capabilities: {
-          resources: {},
-          tools: {},
+          resources: {
+            subscribe: false,
+            listChanged: false
+          },
+          tools: {
+            listChanged: false
+          },
+          experimental: {},
         },
         serverInfo: {
-          name: 'readsb-mcp',
-          version: '1.0.0',
+          name: 'adsb-mcp-server',
+          version: VERSION,
         },
       };
       logger.info(`Sending initialize response: ${JSON.stringify(response)}`);
@@ -1157,11 +1173,23 @@ async function main() {
   logger.debug('server finished');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  logger.debug('Starting MCP server main process...');
+// Check if this file is being run directly (not imported)
+// Handle URL encoding differences between import.meta.url and process.argv[1]
+const currentFileUrl = import.meta.url.replace(/%20/g, ' ');
+const scriptPath = process.argv[1];
+const isMainModule = currentFileUrl === `file://${scriptPath}` ||
+                     currentFileUrl.endsWith(scriptPath) ||
+                     currentFileUrl.includes(scriptPath.replace(/\\/g, '/'));
+
+if (isMainModule) {
+  logger.info('Starting MCP server main process...');
   main().catch((error) => {
     logger.error(`Server error: ${error}`);
     logger.error(`Error stack: ${error instanceof Error ? error.stack : 'No stack trace'}`);
     process.exit(1);
   });
+} else {
+  logger.debug(`scriptPath: ${scriptPath}`);
+  logger.debug(`currentFileUrl: ${currentFileUrl}`);
+  logger.debug('Importing MCP server as a module...');
 }
