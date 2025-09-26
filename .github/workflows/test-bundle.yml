@@ -1,4 +1,6 @@
 name: Test Bundle
+permissions:
+  contents: read
 
 on:
   pull_request:
